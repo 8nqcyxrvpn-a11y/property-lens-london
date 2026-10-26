@@ -52,13 +52,18 @@ function estimate(model: Model, x: {
     ["Type and tenure", get(`cat__type_tenure_${x.typeTenure}`)],
     ["New build", get(`cat__new_build_${x.newBuild ? "Y" : "N"}`)],
     ["Borough", get(`cat__borough_name_${x.borough}`)],
-    ["Neighbourhood", get(`cat__lsoa_code_${x.lsoa}`)],
+    [
+      "Neighbourhood",
+      get(`cat__lsoa_code_${x.lsoa}`) + get(`cat__lsoa_flat_${x.lsoa}_${x.typeTenure.startsWith("F") ? 1 : 0}`),
+    ],
     ["Distance to a station", get("num__log_station") * Math.log1p(x.stationM)],
     ["On a busy main road", get("num__busy") * (x.busy ? 1 : 0)],
   ];
   if (model.epc && model.fill) {
     const typical = model.fill.log_area_by_type_tenure[x.typeTenure] ?? Math.log(70);
-    parts.push(["Floor area", get("num__log_area") * (x.area ? Math.log(x.area) : typical)]);
+    const logArea = x.area ? Math.log(x.area) : typical;
+    const isFlat = x.typeTenure.startsWith("F") ? 1 : 0;
+    parts.push(["Floor area", get("num__log_area") * logArea + get("num__log_area_flat") * logArea * isFlat]);
     parts.push(["Number of rooms", get("num__rooms_f") * (x.rooms ?? model.fill.rooms_median)]);
     parts.push(["Energy certificate on record", get("num__has_epc") * (x.area ? 1 : 0)]);
     parts.push(["Energy rating", get("cat__epc_band_unknown")]);
