@@ -51,6 +51,7 @@ jobs:
               3) script=step3_nearby.py ;;
               4) script=step4_model.py ;;
               5) script=step5_epc.py ;;
+              x) script=experiment_models.py ;;
               *) echo "::error::unknown step $s"; exit 1 ;;
             esac
             echo "== step $s: $script"
