@@ -197,6 +197,10 @@
   color: var(--muted-foreground);
 }
 
+/* Quieten the standard OpenStreetMap colours so the verdict dots stand out. */
+.pl-tiles {
+  filter: grayscale(0.85) contrast(0.95) brightness(1.04);
+}
 .leaflet-container {
   font-family: var(--font-sans);
   background: var(--muted);
