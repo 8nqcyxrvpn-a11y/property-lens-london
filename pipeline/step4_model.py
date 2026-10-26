@@ -154,6 +154,26 @@ GROUP_LABELS = {
 }
 
 
+def display_label(label: str, row) -> str:
+    """Name the actual feature of this home, e.g. 'Leasehold flat' rather than 'Type and tenure'."""
+    if label == "Type and tenure":
+        kind = TYPE_NAMES.get(row["property_type"], "Home").lower()
+        return f"{TENURE_NAMES.get(row['tenure'], '')} {kind}".strip().capitalize()
+    if label == "New build":
+        return "New build" if row["new_build"] == "Y" else "Not a new build"
+    if label == "On a busy main road":
+        return "On a busy main road" if row["busy"] == 1 else "Away from busy main roads"
+    if label == "Floor area" and pd.notna(row.get("floor_area")):
+        return f"Floor area ({int(row['floor_area'])} m²)"
+    if label == "Energy rating":
+        return f"Energy rating {row['energy_band']}" if isinstance(row.get("energy_band"), str) else "No energy certificate"
+    if label == "Distance to a station" and pd.notna(row.get("station_m")):
+        return f"Station {int(round(row['station_m'], -1))} m away"
+    if label == "Number of rooms" and pd.notna(row.get("rooms")):
+        return f"{int(row['rooms'])} rooms"
+    return label
+
+
 def main() -> int:
     PUBLIC.mkdir(parents=True, exist_ok=True)
     df = load()
@@ -216,13 +236,13 @@ def main() -> int:
         for g in contrib.columns:
             if g in ("quarter", "has_epc"):
                 continue
-            label = GROUP_LABELS.get(g, g)
+            label = display_label(GROUP_LABELS.get(g, g), row)
             merged[label] = merged.get(label, 0.0) + float(contrib.at[i, g])
         parts = sorted(merged.items(), key=lambda kv: -abs(kv[1]))
         why = [[label, round(math.exp(v) - 1, 3)] for label, v in parts[:4] if abs(v) >= 0.02]
         addr = " ".join(x for x in [row["saon"], row["paon"], row["street"]] if isinstance(x, str) and x)
         rec = {
-            "id": row["transaction_id"].strip("{}")[-12:],
+            "id": row["transaction_id"].strip("{}").replace("-", "")[:12],
             "a": addr.title(), "pc": row["postcode"], "b": "I" if row["borough_name"] == "Islington" else "H",
             "la": round(row["lat"], 5), "lo": round(row["lon"], 5), "l": row["lsoa_code"],
             "p": int(row["price"]), "d": row["date"].strftime("%Y-%m-%d"),
@@ -236,6 +256,9 @@ def main() -> int:
             if isinstance(row.get("energy_band"), str):
                 rec["e"] = row["energy_band"]
         homes.append(rec)
+    ids = [h["id"] for h in homes]
+    if len(set(ids)) != len(ids):
+        raise RuntimeError(f"Home ids are not unique: {len(ids) - len(set(ids))} duplicates")
     homes.sort(key=lambda h: h["d"], reverse=True)
     (PUBLIC / "homes.json").write_text(json.dumps(homes, separators=(",", ":")))
 

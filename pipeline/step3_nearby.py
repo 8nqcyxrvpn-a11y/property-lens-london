@@ -63,8 +63,10 @@ def classify(tags: dict) -> str | None:
         return "park"
     if tags.get("amenity") == "pharmacy":
         return "pharmacy"
-    if tags.get("railway") == "station" or (tags.get("public_transport") == "station"
-                                            and tags.get("railway") != "halt"):
+    # Rail, Tube, Overground, DLR and tram stations only - not bus stations.
+    is_bus = tags.get("amenity") == "bus_station" or tags.get("bus") == "yes" or "bus station" in name.lower()
+    rail = any(tags.get(k) == "yes" for k in ("train", "subway", "light_rail", "tram")) or tags.get("railway") in ("station", "halt")
+    if rail and not (is_bus and tags.get("railway") not in ("station", "halt")):
         return "station"
     return None
 
@@ -94,7 +96,7 @@ out center tags;"""
         lon = el.get("lon") or (el.get("center") or {}).get("lon")
         if lat is None:
             continue
-        rows.append({"kind": kind, "name": tags.get("name") or tags.get("brand") or kind.title(),
+        rows.append({"kind": kind, "name": tags.get("name") or tags.get("brand") or "",
                      "lat": lat, "lon": lon})
     places = pd.DataFrame(rows).drop_duplicates(["kind", "name", "lat", "lon"])
     # Parks mapped as many small pieces: keep named parks and larger unnamed ones only once.
