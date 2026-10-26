@@ -1,0 +1,41 @@
+# Manual: run the site against the committed data and capture the main pages.
+# Images go to the "screenshots" branch, never the branch Lovable syncs.
+name: Screenshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: |
+          bun install --frozen-lockfile || bun install
+          npm i --no-save playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Capture
+        run: |
+          (bunx vite dev --port 5173 --host 127.0.0.1 > dev.log 2>&1 &)
+          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:5173/ && break; sleep 2; done
+          curl -s -o /dev/null http://127.0.0.1:5173/ ; sleep 8
+          node scripts/screenshots.mjs || (tail -n 30 dev.log; exit 1)
+      - name: Push to the screenshots branch
+        run: |
+          mkdir /tmp/out && cp shots/*.png /tmp/out/
+          git config user.name "property-lens-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan screenshots
+          git rm -rfq . && git clean -fdq -e node_modules
+          mkdir shots && cp /tmp/out/*.png shots/
+          git add shots && git commit -qm "Screenshots from ${GITHUB_REF_NAME}"
+          git push -f origin screenshots
