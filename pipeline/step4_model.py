@@ -39,6 +39,7 @@ def load() -> pd.DataFrame:
     sales["price"] = sales["price"].astype(int)
     pc = pd.read_csv(PROCESSED / "postcodes.csv")
     nearby = pd.read_csv(PROCESSED / "nearby.csv")
+    pc = pc[pc["borough"].isin(["Islington", "Hammersmith and Fulham"])]  # drops mis-recorded addresses
     df = sales.merge(pc[["postcode", "lat", "lon", "lsoa_code"]], on="postcode", how="inner") \
               .merge(nearby[["postcode", "station_m", "main_road_m", "street_feel"]], on="postcode", how="left")
     df = df.dropna(subset=["lat", "lsoa_code"])
@@ -82,6 +83,23 @@ def metrics(actual, predicted) -> dict:
     return {"median_abs_error": round(float(np.median(err)), 4),
             "within_10pct": round(float((err <= 0.10).mean()), 4),
             "within_20pct": round(float((err <= 0.20).mean()), 4), "n": int(len(err))}
+
+
+def baseline_per_m2(train: pd.DataFrame, test: pd.DataFrame) -> np.ndarray:
+    """Yardstick when floor area is known: neighbourhood median price per m2 x floor area."""
+    t = train.dropna(subset=["floor_area"]).copy()
+    t["ppm2"] = t["price"] / t["floor_area"]
+    by_area = t.groupby(["lsoa_code", "property_type"])["ppm2"].agg(["median", "count"])
+    by_borough = t.groupby(["borough_name", "property_type"])["ppm2"].median()
+    out = []
+    for row in test.itertuples():
+        key = (row.lsoa_code, row.property_type)
+        if key in by_area.index and by_area.loc[key, "count"] >= 3:
+            rate = by_area.loc[key, "median"]
+        else:
+            rate = by_borough.get((row.borough_name, row.property_type), t["ppm2"].median())
+        out.append(rate * row.floor_area)
+    return np.asarray(out, dtype=float)
 
 
 def baseline_predict(train: pd.DataFrame, test: pd.DataFrame) -> np.ndarray:
@@ -146,6 +164,13 @@ def main() -> int:
     model_test = metrics(future["price"].values, pred_future)
     base_test = metrics(future["price"].values, baseline_predict(past, future))
     print(f"TEST from {TEST_FROM}: model {model_test} | baseline {base_test}", flush=True)
+    base_m2_test = None
+    if "floor_area" in df:
+        known = future["floor_area"].notna().values
+        if known.sum() >= 200:
+            base_m2_test = metrics(future["price"].values[known], baseline_per_m2(past, future[known]))
+            model_known = metrics(future["price"].values[known], pred_future[known])
+            print(f"Homes with floor area ({known.sum()}): model {model_known} | per-m2 baseline {base_m2_test}", flush=True)
     by_type = {}
     for t, name in TYPE_NAMES.items():
         mask = (future["property_type"] == t).values
@@ -223,14 +248,18 @@ def main() -> int:
         "coef": {n: float(c) for n, c in zip(pre.get_feature_names_out(), final.named_steps["ridge"].coef_)},
         "categorical": cats, "numeric": nums, "latest_quarter": df["quarter"].max(),
         "fair_band": band, "test_from": TEST_FROM,
-        "test": {"model": model_test, "baseline": base_test, "by_type": by_type},
+        "test": {"model": model_test, "baseline": base_test, "baseline_per_m2": base_m2_test, "by_type": by_type},
         "out_of_fold": oof_metrics,
         "sales": int(len(df)), "first_sale": df["date"].min().strftime("%Y-%m-%d"),
         "last_sale": df["date"].max().strftime("%Y-%m-%d"),
         "crime_months": str(areas["crime_months"].iloc[0]) if "crime_months" in areas else "",
         "places": {k: {"name": v[0], "lat": v[1], "lon": v[2]} for k, v in PLACES.items()},
         "verdicts": df["verdict"].value_counts().to_dict(),
-        "epc": "floor_area" in df,
+        "epc": "log_area" in nums,
+        "fill": ({
+            "log_area_by_type_tenure": {k: float(v) for k, v in df.groupby("type_tenure")["log_area"].median().items()},
+            "rooms_median": float(df["rooms_f"].median()),
+        } if "log_area" in nums else None),
     }
     (PUBLIC / "model.json").write_text(json.dumps(model_json, indent=1))
     for f in PUBLIC.glob("*.json"):
