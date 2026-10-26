@@ -793,6 +793,12 @@
    "within_20pct": 0.6977,
    "n": 3053
   },
+  "model_sized": {
+   "median_abs_error": 0.1268,
+   "within_10pct": 0.4026,
+   "within_20pct": 0.696,
+   "n": 3053
+  },
   "by_type": {
    "Flat": {
     "median_abs_error": 0.146,
@@ -848,17 +854,17 @@
  },
  "epc": true,
  "contrib_mean": {
-  "Number of rooms": 0.014802198676567277,
-  "Neighbourhood": 0.052959410479536936,
-  "Energy certificate on record": -0.013100415057280629,
-  "Type and tenure": -0.42163250350386916,
-  "New build": -0.15038402541220316,
-  "On a busy main road": -0.011197259264748433,
-  "When it sold": 0.0002360447067147519,
   "Distance to a station": 0.06306492703435553,
+  "New build": -0.15038402541220316,
+  "When it sold": 0.0002360447067147519,
+  "Type and tenure": -0.42163250350386916,
   "Energy rating": -0.00971145535764251,
+  "Borough": -0.0005688861622826244,
+  "On a busy main road": -0.011197259264748433,
+  "Neighbourhood": 0.052959410479536936,
   "Floor area": 3.5519582999930996,
-  "Borough": -0.0005688861622826244
+  "Energy certificate on record": -0.013100415057280629,
+  "Number of rooms": 0.014802198676567277
  },
  "fill": {
   "log_area_by_type_tenure": {
