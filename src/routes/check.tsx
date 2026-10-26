@@ -141,12 +141,22 @@ function CheckListing() {
       const diff = price / fair - 1;
       const verdict: Verdict = diff > band ? "above" : diff < -band ? "below" : "fair";
       const mean = model.data.contrib_mean;
+      const typeName: Record<string, string> = { F: "flat", T: "terraced house", S: "semi-detached house", D: "detached house" };
+      const named = (l: string): string => {
+        if (l === "Type and tenure") return `${tenure === "L" ? "Leasehold" : "Freehold"} ${typeName[type] ?? "home"}`;
+        if (l === "New build") return newBuild ? "New build" : "Not a new build";
+        if (l === "On a busy main road") return busy ? "On a busy main road" : "Away from busy main roads";
+        if (l === "Floor area") return area ? `Floor area (${area} m²)` : "Floor area (typical for this type, not entered)";
+        if (l === "Distance to a station") return `Station ${Math.round(stationM / 10) * 10} m away`;
+        if (l === "Number of rooms") return rooms ? `${rooms} rooms` : "Rooms (typical, not entered)";
+        return l;
+      };
       const reasons = parts
         .map(([l, v]) => [l, v - (mean[l] ?? 0)] as [string, number])
         .filter(([l, v]) => Math.abs(v) >= 0.02 && l !== "Energy certificate on record" && l !== "Energy rating")
         .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
         .slice(0, 4)
-        .map(([l, v]) => [l, Math.exp(v) - 1] as [string, number]);
+        .map(([l, v]) => [named(l), Math.exp(v) - 1] as [string, number]);
       setResult({ postcode: pc.result.postcode, district: borough, fair, verdict, reasons, stationName, stationM });
     } catch {
       setError("The postcode lookup didn't respond. Try again in a moment.");
@@ -213,7 +223,9 @@ function CheckListing() {
 
       {result && model.data && (
         <section className="mt-10 grid gap-8 border-t border-border pt-8 md:grid-cols-[auto_minmax(0,1fr)]">
-          <Nameplate street={result.postcode} district={result.district} />
+          <div className="self-start">
+            <Nameplate street={result.postcode} district={result.district} />
+          </div>
           <div>
             <ValueBar price={price} fair={result.fair} band={model.data.fair_band} verdict={result.verdict} priceLabel="Asking price" />
             {result.reasons.length > 0 && (
