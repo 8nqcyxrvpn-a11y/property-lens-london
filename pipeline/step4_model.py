@@ -222,7 +222,7 @@ def main() -> int:
         why = [[label, round(math.exp(v) - 1, 3)] for label, v in parts[:4] if abs(v) >= 0.02]
         addr = " ".join(x for x in [row["saon"], row["paon"], row["street"]] if isinstance(x, str) and x)
         rec = {
-            "id": row["transaction_id"].strip("{}")[-12:],
+            "id": row["transaction_id"].strip("{}").replace("-", "")[:12],
             "a": addr.title(), "pc": row["postcode"], "b": "I" if row["borough_name"] == "Islington" else "H",
             "la": round(row["lat"], 5), "lo": round(row["lon"], 5), "l": row["lsoa_code"],
             "p": int(row["price"]), "d": row["date"].strftime("%Y-%m-%d"),
@@ -236,6 +236,9 @@ def main() -> int:
             if isinstance(row.get("energy_band"), str):
                 rec["e"] = row["energy_band"]
         homes.append(rec)
+    ids = [h["id"] for h in homes]
+    if len(set(ids)) != len(ids):
+        raise RuntimeError(f"Home ids are not unique: {len(ids) - len(set(ids))} duplicates")
     homes.sort(key=lambda h: h["d"], reverse=True)
     (PUBLIC / "homes.json").write_text(json.dumps(homes, separators=(",", ":")))
 
