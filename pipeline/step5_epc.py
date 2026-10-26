@@ -28,27 +28,45 @@ TOKEN = os.environ.get("EPC_API_TOKEN", "")
 SEARCH_CACHE = PROCESSED / "epc_search_cache.json"
 DETAIL_CACHE = PROCESSED / "epc_detail_cache.json"
 TIME_LIMIT = float(os.environ.get("EPC_TIME_LIMIT_MIN", "95")) * 60
+PAGE_SIZE = int(os.environ.get("EPC_PAGE_SIZE", "100"))
 START = time.time()
 SESSION = requests.Session()
 SESSION.headers.update({"Authorization": f"Bearer {TOKEN}", "Accept": "application/json"})
 
 
+STATS = {"requests": 0, "seconds": 0.0, "429": 0, "errors": 0}
+
+
 def get(path: str, params: dict) -> dict | None:
-    for attempt in range(6):
+    for attempt in range(4):
+        if out_of_time():
+            return None
+        t0 = time.time()
         try:
-            r = SESSION.get(BASE + path, params=params, timeout=60)
+            r = SESSION.get(BASE + path, params=params, timeout=20)
+            STATS["requests"] += 1
+            STATS["seconds"] += time.time() - t0
             if r.status_code == 404:
                 return None
             if r.status_code == 429:
-                time.sleep(10 * (attempt + 1))
+                STATS["429"] += 1
+                wait = float(r.headers.get("Retry-After") or 5 * (attempt + 1))
+                time.sleep(min(wait, 60))
                 continue
             r.raise_for_status()
-            time.sleep(0.12)
             return r.json()
         except requests.RequestException as exc:
-            print(f"retry {attempt + 1}: {exc}", flush=True)
-            time.sleep(3 * (attempt + 1))
+            STATS["errors"] += 1
+            if STATS["errors"] <= 5:
+                print(f"error {attempt + 1}: {str(exc)[:160]}", flush=True)
+            time.sleep(2 * (attempt + 1))
     return None
+
+
+def progress(label: str, n: int, total: int) -> None:
+    avg = STATS["seconds"] / max(STATS["requests"], 1)
+    print(f"{label} {n}/{total} | {time.time() - START:.0f}s | requests {STATS['requests']} "
+          f"avg {avg:.2f}s | 429s {STATS['429']} | errors {STATS['errors']}", flush=True)
 
 
 def words(text: str) -> list[str]:
@@ -97,19 +115,23 @@ def main() -> int:
             break
         certs, page = [], 1
         while True:
-            body = get("/api/domestic/search", {"postcode": pc, "page_size": 100, "page": page})
+            body = get("/api/domestic/search", {"postcode": pc, "page_size": PAGE_SIZE, "page": page})
             if not body or not isinstance(body.get("data"), list):
                 break
             for c in body["data"]:
                 address = " ".join(x for x in [c.get("addressLine1"), c.get("addressLine2"), c.get("addressLine3")] if x)
                 certs.append([c["certificateNumber"], address, c.get("registrationDate"), c.get("currentEnergyEfficiencyBand")])
-            nxt = (body.get("pagination") or {}).get("nextPage")
-            if not nxt or page >= 20:
+            pag = body.get("pagination") or {}
+            if n <= 3 and page == 1:
+                print(f"{pc}: {len(body['data'])} on page 1, pagination {pag}", flush=True)
+            nxt = pag.get("nextPage")
+            if not nxt or nxt <= page or page >= 20:
                 break
             page = nxt
         search[pc] = certs
-        if n % 200 == 0:
-            print(f"searched {n}/{len(todo)} postcodes", flush=True)
+        if n % 25 == 0:
+            progress("postcodes", n, len(todo))
+        if n % 100 == 0:
             SEARCH_CACHE.write_text(json.dumps(search, separators=(",", ":")))
     SEARCH_CACHE.write_text(json.dumps(search, separators=(",", ":")))
 
@@ -147,8 +169,9 @@ def main() -> int:
         area = find_number(data, AREA) or find_number(data, AREA_FALLBACK)
         rooms = find_number(data, ROOMS)
         detail[number] = [area, rooms]
-        if n % 500 == 0:
-            print(f"details {n}/{len(wanted)}", flush=True)
+        if n % 100 == 0:
+            progress("details", n, len(wanted))
+        if n % 250 == 0:
             DETAIL_CACHE.write_text(json.dumps(detail, separators=(",", ":")))
     DETAIL_CACHE.write_text(json.dumps(detail, separators=(",", ":")))
 
