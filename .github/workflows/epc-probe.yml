@@ -1,0 +1,35 @@
+# Manual: confirm the EPC token is saved and find which API address accepts it.
+# Prints only HTTP status codes and the start of public responses, never the token.
+name: EPC token check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check
+        env:
+          TOKEN: ${{ secrets.EPC_API_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "::error::EPC_API_TOKEN is not set"; exit 1; fi
+          echo "::notice title=Token::EPC_API_TOKEN is set (${#TOKEN} characters)"
+          true || home=$(curl -s https://get-energy-performance-data.communities.gov.uk/ | grep -oE 'href="[^"]*(api|docs|developer)[^"]*"' | sort -u | head -n 12 | paste -sd ' ' -)
+          true || echo "::notice title=Links on the service page::${home}"
+          for url in \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/certificate?certificate_number=0330-3331-7070-2594-6711" \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/domestic/certificate?certificate_number=0330-3331-7070-2594-6711" \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/domestic/certificate/0330-3331-7070-2594-6711" \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/certificate/0330-3331-7070-2594-6711" \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/domestic/certificates/0330-3331-7070-2594-6711" \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/domestic/search?postcode=EC1V2AR&page_size=1&include=all" \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/domestic/search?date_start=2024-01-01&date_end=2024-01-31&council=Islington" \
+            "https://api.get-energy-performance-data.communities.gov.uk/api/domestic/search?date_start=2024-01-01&date_end=2024-01-05" ; do
+            code=$(curl -s -o body.txt -w "%{http_code}" -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" "$url")
+            echo "::notice title=HTTP ${code}::${url} :: $(head -c 1500 body.txt | tr '\n' ' ' | sed 's/%/%25/g')"
+          done

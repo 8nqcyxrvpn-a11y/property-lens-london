@@ -20,19 +20,30 @@ import requests
 
 from config import PROCESSED, USER_AGENT
 
-OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
+OVERPASS = [
+    "https://overpass.private.coffee/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+]
 
 
 def overpass(query: str) -> dict:
-    for attempt in range(6):
+    for attempt in range(12):
         url = OVERPASS[attempt % len(OVERPASS)]
         try:
-            response = requests.post(url, data={"data": query}, timeout=400,
-                                     headers={"User-Agent": USER_AGENT})
-            if response.status_code in (429, 504):
-                time.sleep(20 * (attempt + 1))
+            headers = {"User-Agent": USER_AGENT, "Accept": "application/json,*/*",
+                       "Referer": "https://github.com/8nqcyxrvpn-a11y/property-lens-london"}
+            if attempt % 2:
+                response = requests.get(url, params={"data": query}, timeout=400, headers=headers)
+            else:
+                response = requests.post(url, data={"data": query}, timeout=400, headers=headers)
+            if response.status_code in (429, 502, 503, 504):
+                print(f"overpass {url} busy ({response.status_code})", flush=True)
+                time.sleep(15 * (attempt + 1))
                 continue
             response.raise_for_status()
+            print(f"overpass ok from {url}", flush=True)
             return response.json()
         except requests.RequestException as exc:
             print(f"overpass retry {attempt + 1}: {exc}", flush=True)
