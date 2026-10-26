@@ -169,7 +169,7 @@ function Safety({ area }: { area: Area | undefined }) {
         Busy shopping streets and stations record more crime because more people pass through, so walk it at night
         before deciding.
       </p>
-      <p>Crime, compared with all of England: {decileWords(area.imd_crime_decile)}.</p>
+      <p>Crime, compared with all of England: {decileWords(area.imd_crime_decile, "crime")}.</p>
       <p>Overall deprivation: {decileWords(area.imd_decile)}.</p>
       <p className="text-sm text-muted-foreground">{area.lsoa_name}, {area.ward} ward. Deprivation from the English Indices of Deprivation 2025.</p>
     </Section>
@@ -182,7 +182,7 @@ function NearbyList({ nb }: { nb: Nearby | undefined }) {
     m === undefined ? null : (
       <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
         <span>
-          <span className="text-muted-foreground">{label}:</span> {name}
+          <span className="text-muted-foreground">{label}:</span> {name || "nearest"}
           {extra ? <span className="text-muted-foreground"> {extra}</span> : null}
         </span>
         <span className="num text-muted-foreground">{walkMin(m)} min walk</span>
@@ -197,7 +197,7 @@ function NearbyList({ nb }: { nb: Nearby | undefined }) {
         {row("Starbucks", nb.starbucks_name, nb.starbucks_m)}
         {row("Gym", nb.gym_name, nb.gym_m)}
         {row("Park", nb.park_name, nb.park_m)}
-        {row("Pharmacy", "nearest", nb.pharmacy_m)}
+        {row("Pharmacy", "", nb.pharmacy_m)}
       </ul>
       <p className="text-sm text-muted-foreground">From OpenStreetMap. Walking times are estimates from distance.</p>
     </Section>
@@ -214,7 +214,7 @@ function Street({ nb }: { nb: Nearby | undefined }) {
   return (
     <Section title="Quiet or busy">
       <p>
-        <span className="font-semibold capitalize">{nb.street_feel} street.</span> {text}
+        <span className="font-semibold">{nb.street_feel.charAt(0).toUpperCase() + nb.street_feel.slice(1)} street.</span> {text}
       </p>
       {nb.main_road_m !== undefined && (
         <p className="text-muted-foreground">Nearest main road: {metres(nb.main_road_m)} away.</p>
