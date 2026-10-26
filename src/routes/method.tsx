@@ -46,8 +46,11 @@ function Method() {
               <tbody>
                 <Row name="Property Lens model" m={m.test.model} strong />
                 <Row name="Neighbourhood median (yardstick)" m={m.test.baseline} />
+                {m.test.model_sized && (
+                  <Row name="Property Lens model, homes with a known size" m={m.test.model_sized} strong />
+                )}
                 {m.test.baseline_per_m2 && (
-                  <Row name="Neighbourhood price per m² × size (homes with a known size)" m={m.test.baseline_per_m2} />
+                  <Row name="Price per m² × size, same homes (yardstick)" m={m.test.baseline_per_m2} />
                 )}
                 {Object.entries(m.test.by_type).map(([type, mm]) => (
                   <Row key={type} name={`Model, ${type.toLowerCase()}s only`} m={mm} />
@@ -121,7 +124,7 @@ function Row({ name, m, strong }: { name: string; m: Metrics; strong?: boolean }
   return (
     <tr className="border-b border-border">
       <td className={`py-2 pr-4 ${strong ? "font-semibold" : ""}`}>{name}</td>
-      <td className="num py-2 pr-4">±{p(m.median_abs_error)}</td>
+      <td className="num py-2 pr-4">±{(m.median_abs_error * 100).toFixed(1)}%</td>
       <td className="num py-2 pr-4">{p(m.within_10pct)}</td>
       <td className="num py-2">{p(m.within_20pct)}</td>
     </tr>

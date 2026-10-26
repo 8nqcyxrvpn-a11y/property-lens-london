@@ -78,7 +78,7 @@ export interface Model {
   latest_quarter: string;
   fair_band: number;
   test_from: string;
-  test: { model: Metrics; baseline: Metrics; baseline_per_m2: Metrics | null; by_type: Record<string, Metrics> };
+  test: { model: Metrics; baseline: Metrics; baseline_per_m2: Metrics | null; model_sized?: Metrics | null; by_type: Record<string, Metrics> };
   out_of_fold: Metrics;
   sales: number;
   first_sale: string;
