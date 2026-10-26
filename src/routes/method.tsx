@@ -46,6 +46,9 @@ function Method() {
               <tbody>
                 <Row name="Property Lens model" m={m.test.model} strong />
                 <Row name="Neighbourhood median (yardstick)" m={m.test.baseline} />
+                {m.test.baseline_per_m2 && (
+                  <Row name="Neighbourhood price per m² × size (homes with a known size)" m={m.test.baseline_per_m2} />
+                )}
                 {Object.entries(m.test.by_type).map(([type, mm]) => (
                   <Row key={type} name={`Model, ${type.toLowerCase()}s only`} m={mm} />
                 ))}

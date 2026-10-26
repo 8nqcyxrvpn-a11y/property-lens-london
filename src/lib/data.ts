@@ -78,7 +78,7 @@ export interface Model {
   latest_quarter: string;
   fair_band: number;
   test_from: string;
-  test: { model: Metrics; baseline: Metrics; by_type: Record<string, Metrics> };
+  test: { model: Metrics; baseline: Metrics; baseline_per_m2: Metrics | null; by_type: Record<string, Metrics> };
   out_of_fold: Metrics;
   sales: number;
   first_sale: string;
@@ -87,6 +87,7 @@ export interface Model {
   places: Record<string, { name: string; lat: number; lon: number }>;
   verdicts: Record<string, number>;
   epc: boolean;
+  fill: { log_area_by_type_tenure: Record<string, number>; rooms_median: number } | null;
 }
 
 async function getJson<T>(name: string): Promise<T> {
