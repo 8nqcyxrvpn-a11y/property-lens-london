@@ -70,9 +70,10 @@ export function LeafletMap({ points, pins = [], center, zoom = 14, radiusM, sele
         center ?? [51.535, -0.15],
         zoom,
       );
-      Leaflet.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO',
+      Leaflet.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
+        className: "pl-tiles",
       }).addTo(map.current);
       layer.current = Leaflet.layerGroup().addTo(map.current);
       draw(Leaflet);
