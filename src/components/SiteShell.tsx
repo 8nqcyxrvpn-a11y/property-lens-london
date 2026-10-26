@@ -37,7 +37,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <footer className="border-t border-border bg-card">
         <div className="mx-auto max-w-[1400px] px-4 py-5 text-xs leading-relaxed text-muted-foreground sm:px-6">
           Sale prices: HM Land Registry Price Paid Data. Crime: police.uk. Deprivation: English Indices of
-          Deprivation 2025. Places and roads: © OpenStreetMap contributors. Travel times: TfL. Contains public
+          Deprivation 2025. Places and roads: © OpenStreetMap contributors. Travel times: TfL. Rents: ONS Price Index of Private Rents. Contains public
           sector information licensed under the Open Government Licence v3.0. Estimates are a guide, not a
           valuation. A portfolio project by Razan Hijazi.
         </div>
