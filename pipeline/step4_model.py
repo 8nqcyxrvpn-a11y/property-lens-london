@@ -196,6 +196,7 @@ def main() -> int:
     base_test = metrics(future["price"].values, baseline_predict(past, future))
     print(f"TEST from {TEST_FROM}: model {model_test} | baseline {base_test}", flush=True)
     base_m2_test = None
+    model_known = None
     if "floor_area" in df:
         known = future["floor_area"].notna().values
         if known.sum() >= 200:
@@ -287,7 +288,8 @@ def main() -> int:
         "coef": {n: float(c) for n, c in zip(pre.get_feature_names_out(), final.named_steps["ridge"].coef_)},
         "categorical": cats, "numeric": nums, "latest_quarter": df["quarter"].max(),
         "fair_band": band, "test_from": TEST_FROM,
-        "test": {"model": model_test, "baseline": base_test, "baseline_per_m2": base_m2_test, "by_type": by_type},
+        "test": {"model": model_test, "baseline": base_test, "baseline_per_m2": base_m2_test,
+                 "model_sized": model_known, "by_type": by_type},
         "out_of_fold": oof_metrics,
         "sales": int(len(df)), "first_sale": df["date"].min().strftime("%Y-%m-%d"),
         "last_sale": df["date"].max().strftime("%Y-%m-%d"),
