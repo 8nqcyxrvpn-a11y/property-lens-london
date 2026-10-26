@@ -133,7 +133,7 @@ function CheckListing() {
     if (p.tenure) setTenure(p.tenure);
     if (p.newBuild) setNewBuild(true);
     if (p.m2) setArea(String(p.m2));
-    if (p.url) setUrl(p.url);
+    setUrl(p.url ?? "");
     if (p.postcode) setWhere(p.postcode);
     else if (p.address) setWhere(p.address);
   }
@@ -189,7 +189,7 @@ function CheckListing() {
       let stationM: number | null = null;
       let stationName = "";
       for (const [k, name, plat, plon] of places.data ?? []) {
-        if (k !== "station") continue;
+        if (k !== "station" || !name) continue;
         const d = distanceM(lat, lon, plat, plon);
         if (stationM === null || d < stationM) {
           stationM = d;
@@ -206,6 +206,10 @@ function CheckListing() {
             nb = nearby.data[h.pc];
           }
         }
+      }
+      if (nb?.station_name && nb.station_m !== undefined && covered) {
+        // Same station as the "Nearby" list, measured from the nearest home we have.
+        stationName = nb.station_name;
       }
       if (!covered) stationM = null;
 
@@ -257,7 +261,7 @@ function CheckListing() {
       const bedWord = bedsN === 0 ? "Studio" : `${bedsN}${bedsN >= 4 ? "+" : ""}-bed`;
       setReport({
         kind,
-        title: parsed?.address && !isPostcode ? parsed.address : `${bedWord} ${type === "F" ? "flat" : "house"}, ${pc.postcode}`,
+        title: parsed?.address && (where === parsed.postcode || where === parsed.address) ? parsed.address.replace(/,?\s*London\b.*$/i, "").replace(/,\s*[A-Z]{1,2}\d[A-Z\d]?(\s*\d[A-Z]{2})?$/i, "") || `${bedWord} ${type === "F" ? "flat" : "house"}, ${pc.postcode}` : `${bedWord} ${type === "F" ? "flat" : "house"}, ${pc.postcode}`,
         postcode: pc.postcode,
         district: district ?? pc.admin_district,
         lat,

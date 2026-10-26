@@ -148,7 +148,7 @@ export function StreetPhoto({ lat, lon, label }: { lat: number; lon: number; lab
   if (!src)
     return (
       <a href={streetView(lat, lon)} target="_blank" rel="noreferrer"
-        className="flex h-full min-h-[180px] w-full items-center justify-center rounded-sm border border-dashed border-input bg-muted/50 px-4 text-center text-sm hover:bg-muted">
+        className="flex h-[200px] w-full items-center justify-center rounded-sm border border-dashed border-input bg-muted/50 px-4 text-center text-sm hover:bg-muted">
         See the street in Google Street View
       </a>
     );
