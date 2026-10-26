@@ -135,8 +135,10 @@ function CheckListing() {
       const band = model.data.fair_band;
       const diff = price / fair - 1;
       const verdict: Verdict = diff > band ? "above" : diff < -band ? "below" : "fair";
+      const mean = model.data.contrib_mean;
       const reasons = parts
-        .filter(([, v]) => Math.abs(v) >= 0.02)
+        .map(([l, v]) => [l, v - (mean[l] ?? 0)] as [string, number])
+        .filter(([l, v]) => Math.abs(v) >= 0.02 && l !== "Energy certificate on record" && l !== "Energy rating")
         .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
         .slice(0, 4)
         .map(([l, v]) => [l, Math.exp(v) - 1] as [string, number]);
@@ -210,7 +212,10 @@ function CheckListing() {
           <div>
             <ValueBar price={price} fair={result.fair} band={model.data.fair_band} verdict={result.verdict} priceLabel="Asking price" />
             {result.reasons.length > 0 && (
-              <ul className="mt-6 space-y-2">
+              <p className="mt-6 text-sm text-muted-foreground">Compared with the average home sold in these two boroughs:</p>
+            )}
+            {result.reasons.length > 0 && (
+              <ul className="mt-2 space-y-2">
                 {result.reasons.map(([label, v]) => (
                   <li key={label} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
                     <span>{label}</span>
