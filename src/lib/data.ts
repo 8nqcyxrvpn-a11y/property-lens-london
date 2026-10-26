@@ -202,11 +202,15 @@ export function safetyWords(p: number | null): { label: string; tone: string } {
 }
 
 /** IMD deciles: 1 = most deprived 10% of areas in England, 10 = least deprived. */
-export function decileWords(d: number | null): string {
+export function decileWords(d: number | null, kind: "deprivation" | "crime" = "deprivation"): string {
   if (d === null || Number.isNaN(d)) return "not available";
-  if (d <= 2) return `among the most deprived 20% in England (decile ${d})`;
-  if (d <= 4) return `more deprived than average (decile ${d})`;
-  if (d <= 6) return `around the national middle (decile ${d})`;
-  if (d <= 8) return `less deprived than average (decile ${d})`;
-  return `among the least deprived 20% in England (decile ${d})`;
+  const [most, more, less, least] =
+    kind === "crime"
+      ? ["among the highest-crime 20% of areas", "higher crime than average", "lower crime than average", "among the lowest-crime 20% of areas"]
+      : ["among the most deprived 20% of areas", "more deprived than average", "less deprived than average", "among the least deprived 20% of areas"];
+  if (d <= 2) return `${most} (decile ${d} of 10)`;
+  if (d <= 4) return `${more} (decile ${d} of 10)`;
+  if (d <= 6) return `around the middle for England (decile ${d} of 10)`;
+  if (d <= 8) return `${less} (decile ${d} of 10)`;
+  return `${least} (decile ${d} of 10)`;
 }

@@ -1,4 +1,4 @@
-import { money, pct, VERDICT, type Verdict } from "../lib/data";
+import { money, VERDICT, type Verdict } from "../lib/data";
 
 /**
  * The fair range as a band, with the actual (or asking) price marked against it.
@@ -56,8 +56,9 @@ export function ValueBar({ price, fair, band, verdict, priceLabel = "Sold for" }
           {v.label}
         </span>
         <span className="text-muted-foreground">
-          {" "}
-          — {Math.abs(diff) < 0.005 ? "right at" : `${pct(diff)} ${diff > 0 ? "above" : "below"}`} the estimate.
+          {Math.abs(diff) < 0.005
+            ? ": right at the estimate."
+            : `: ${Math.abs(diff * 100).toFixed(0)}% ${diff > 0 ? "above" : "below"} the estimate.`}
         </span>
       </p>
     </figure>
