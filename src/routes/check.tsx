@@ -44,6 +44,7 @@ function estimate(model: Model, x: {
   stationM: number;
   busy: boolean;
   area: number | null;
+  rooms: number | null;
 }): { log: number; parts: [string, number][] } {
   const c = model.coef;
   const get = (k: string) => c[k] ?? 0;
@@ -55,9 +56,12 @@ function estimate(model: Model, x: {
     ["Distance to a station", get("num__log_station") * Math.log1p(x.stationM)],
     ["On a busy main road", get("num__busy") * (x.busy ? 1 : 0)],
   ];
-  if (model.epc && x.area) {
-    parts.push(["Floor area", get("num__log_area") * Math.log(x.area)]);
-    parts.push(["Energy certificate on record", get("num__has_epc")]);
+  if (model.epc && model.fill) {
+    const typical = model.fill.log_area_by_type_tenure[x.typeTenure] ?? Math.log(70);
+    parts.push(["Floor area", get("num__log_area") * (x.area ? Math.log(x.area) : typical)]);
+    parts.push(["Number of rooms", get("num__rooms_f") * (x.rooms ?? model.fill.rooms_median)]);
+    parts.push(["Energy certificate on record", get("num__has_epc") * (x.area ? 1 : 0)]);
+    parts.push(["Energy rating", get("cat__epc_band_unknown")]);
   }
   const market = get(`cat__quarter_${model.latest_quarter}`);
   const log = model.intercept + market + parts.reduce((s, [, v]) => s + v, 0);
@@ -74,6 +78,7 @@ function CheckListing() {
   const [newBuild, setNewBuild] = useState(false);
   const [busy, setBusy] = useState(false);
   const [area, setArea] = useState("");
+  const [rooms, setRooms] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
@@ -124,6 +129,7 @@ function CheckListing() {
         stationM,
         busy,
         area: area ? Number(area) : null,
+        rooms: rooms ? Number(rooms) : null,
       });
       const fair = Math.round(Math.exp(log) / 1000) * 1000;
       const band = model.data.fair_band;
@@ -173,8 +179,13 @@ function CheckListing() {
           </select>
         </Field>
         {model.data?.epc && (
-          <Field label="Floor area (m², optional)" htmlFor="area">
+          <Field label="Floor area in m² (from the listing or its floor plan)" htmlFor="area">
             <input id="area" inputMode="numeric" value={area} onChange={(e) => setArea(e.target.value)} placeholder="65" className={input} />
+          </Field>
+        )}
+        {model.data?.epc && (
+          <Field label="Rooms, excluding kitchen and bathrooms (optional)" htmlFor="rooms">
+            <input id="rooms" inputMode="numeric" value={rooms} onChange={(e) => setRooms(e.target.value)} placeholder="3" className={input} />
           </Field>
         )}
         <div className="flex flex-col justify-end gap-2 text-sm">
