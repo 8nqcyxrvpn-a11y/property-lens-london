@@ -1,0 +1,23 @@
+# One-off check that listing-site search links resolve (status code and final URL only; no page content is kept).
+name: Link probe
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36"
+          for u in \
+            "https://www.zoopla.co.uk/to-rent/property/n7/" \
+            "https://www.zoopla.co.uk/for-sale/property/n7/" \
+            "https://www.zoopla.co.uk/to-rent/property/n7-8db/?q=N7%208DB&radius=0.5" \
+            "https://www.onthemarket.com/to-rent/property/n7/" \
+            "https://www.onthemarket.com/for-sale/property/n7/" \
+            "https://www.spareroom.co.uk/flatshare/search.pl?flatshare_type=offered&search=N7" \
+            "https://www.spareroom.co.uk/flatshare/?search=N7" \
+            "https://www.rightmove.co.uk/property-to-rent/search.html?searchLocation=N7&useLocationIdentifier=false" \
+            "https://www.rightmove.co.uk/property-to-rent/N7.html" \
+            "https://www.rightmove.co.uk/property-for-sale/N7.html" ; do
+            r=$(curl -s -o /dev/null -L --max-time 30 -A "$UA" -w '%{http_code} %{url_effective}' "$u")
+            echo "::notice title=probe::$u -> $r"
+          done
