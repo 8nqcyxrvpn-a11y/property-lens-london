@@ -255,7 +255,11 @@ def main() -> int:
         "crime_months": str(areas["crime_months"].iloc[0]) if "crime_months" in areas else "",
         "places": {k: {"name": v[0], "lat": v[1], "lon": v[2]} for k, v in PLACES.items()},
         "verdicts": df["verdict"].value_counts().to_dict(),
-        "epc": "floor_area" in df,
+        "epc": "log_area" in nums,
+        "fill": ({
+            "log_area_by_type_tenure": {k: float(v) for k, v in df.groupby("type_tenure")["log_area"].median().items()},
+            "rooms_median": float(df["rooms_f"].median()),
+        } if "log_area" in nums else None),
     }
     (PUBLIC / "model.json").write_text(json.dumps(model_json, indent=1))
     for f in PUBLIC.glob("*.json"):
