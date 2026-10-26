@@ -169,7 +169,11 @@ function Safety({ area }: { area: Area | undefined }) {
         Busy shopping streets and stations record more crime because more people pass through, so walk it at night
         before deciding.
       </p>
-      <p>Crime, compared with all of England: {decileWords(area.imd_crime_decile, "crime")}.</p>
+      <p>
+        Compared with all of England, the official crime measure puts this neighbourhood{" "}
+        {decileWords(area.imd_crime_decile, "crime")}. Inner London scores high on this, so the comparison with
+        nearby streets above is usually more useful.
+      </p>
       <p>Overall deprivation: {decileWords(area.imd_decile)}.</p>
       <p className="text-sm text-muted-foreground">{area.lsoa_name}, {area.ward} ward. Deprivation from the English Indices of Deprivation 2025.</p>
     </Section>

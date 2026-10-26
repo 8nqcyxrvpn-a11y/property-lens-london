@@ -196,9 +196,9 @@ export const SHORTCUTS: Geo[] = [
 /** Plain-language reading of how many personal-safety crimes an area has, versus the others covered. */
 export function safetyWords(p: number | null): { label: string; tone: string } {
   if (p === null) return { label: "No crime data", tone: "var(--fair)" };
-  if (p <= 0.33) return { label: "Fewer street crimes than most", tone: "var(--below)" };
-  if (p <= 0.66) return { label: "Typical for these boroughs", tone: "var(--fair)" };
-  return { label: "More street crimes than most", tone: "var(--above)" };
+  if (p <= 0.33) return { label: "Safer than most of these two boroughs", tone: "var(--below)" };
+  if (p <= 0.66) return { label: "Typical for these two boroughs", tone: "var(--fair)" };
+  return { label: "Less safe than most of these two boroughs", tone: "var(--above)" };
 }
 
 /** IMD deciles: 1 = most deprived 10% of areas in England, 10 = least deprived. */
