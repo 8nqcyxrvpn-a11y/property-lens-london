@@ -91,6 +91,7 @@ function Method() {
           <li><b>Deprivation:</b> the English Indices of Deprivation 2025, by neighbourhood (LSOA).</li>
           <li><b>Nearby places and main roads:</b> OpenStreetMap.</li>
           <li><b>Travel times:</b> the TfL Journey Planner, leaving at 8:30 on a weekday.</li>
+          <li><b>Rents:</b> the ONS Price Index of Private Rents: the official average monthly rent in each London borough, by number of bedrooms, updated monthly.</li>
         </ul>
       </Block>
 
@@ -108,12 +109,24 @@ function Method() {
         </p>
       </Block>
 
+      <Block title="How a rent is checked">
+        <p>
+          There is no public record of what each home rents for, so a rent check starts from the official average
+          rent for that many bedrooms in the borough. It then adjusts for the neighbourhood (using how much more or
+          less homes there sell for than the borough average, at half strength, because rents vary less than prices),
+          the distance to a station and the floor area if you give it.
+        </p>
+        <p>
+          It is rougher than the sale estimate, so a rent counts as fair within ±20% of the typical figure rather than
+          ±14%. Rooms in shared houses aren&apos;t covered by the official figures.
+        </p>
+      </Block>
+
       <Block title="What it can't tell you">
         <ul className="list-disc space-y-2 pl-5">
           <li>The inside of a home: condition, renovation, views, outdoor space or lease length.</li>
           {!m?.epc && <li>Floor area, which matters a lot; it will be added from Energy Performance Certificates.</li>}
-          <li>Live listings: listing sites don&apos;t share their data, so use &quot;Check a listing&quot; for a home you found.</li>
-          <li>Rent: there is no public record of what each home rents for.</li>
+          <li>Live listings: listing sites don&apos;t share their data, so paste a home you found into &quot;Check a listing&quot;. Each home page links to what&apos;s on the market nearby.</li>
         </ul>
       </Block>
     </div>

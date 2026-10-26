@@ -26,9 +26,19 @@ PLACES = {
     "lse": ("LSE", 51.51442, -0.11648),
     "ucl": ("UCL", 51.52456, -0.13400),
     "kcl": ("King's College London (Strand)", 51.51150, -0.11600),
+    "city": ("City St George's (Northampton Square)", 51.52770, -0.10250),
+    "imperial": ("Imperial College (South Kensington)", 51.49880, -0.17490),
+    "soas": ("SOAS", 51.52250, -0.12900),
 }
 
 IMD_URL = ("https://assets.publishing.service.gov.uk/media/691ded56d140bbbaa59a2a7d/"
            "File_7_IoD2025_All_Ranks_Scores_Deciles_Population_Denominators.csv")
 
 USER_AGENT = "PropertyLensLondon/1.0 (academic portfolio project; contact via GitHub 8nqcyxrvpn-a11y)"
+
+# ONS Price Index of Private Rents: monthly average rents by local authority and bedrooms.
+RENTS_PAGE = ("https://www.ons.gov.uk/economy/inflationandpriceindices/datasets/"
+              "priceindexofprivaterentsukmonthlypricestatistics")
+RENTS_FALLBACK_URL = ("https://www.ons.gov.uk/file?uri=/economy/inflationandpriceindices/datasets/"
+                      "priceindexofprivaterentsukmonthlypricestatistics/25march2026/"
+                      "priceindexofprivaterentsukmonthlypricestatistics.xlsx")

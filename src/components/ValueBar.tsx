@@ -4,12 +4,14 @@ import { money, VERDICT, type Verdict } from "../lib/data";
  * The fair range as a band, with the actual (or asking) price marked against it.
  * The scale runs from 40% below to 40% above the fair value; prices beyond that sit at the edge.
  */
-export function ValueBar({ price, fair, band, verdict, priceLabel = "Sold for" }: {
+export function ValueBar({ price, fair, band, verdict, priceLabel = "Sold for", fairLabel = "Fair value estimate", unit = "" }: {
   price: number;
   fair: number;
   band: number;
   verdict: Verdict;
   priceLabel?: string;
+  fairLabel?: string;
+  unit?: string; // e.g. " a month"
 }) {
   const span = 0.4;
   const pos = (x: number) => Math.min(100, Math.max(0, ((x / fair - 1 + span) / (2 * span)) * 100));
@@ -20,12 +22,16 @@ export function ValueBar({ price, fair, band, verdict, priceLabel = "Sold for" }
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <div>
           <div className="text-sm text-muted-foreground">{priceLabel}</div>
-          <div className="num font-[family-name:var(--font-display)] text-3xl font-semibold">{money(price)}</div>
+          <div className="num font-[family-name:var(--font-display)] text-3xl font-semibold">
+            {money(price)}
+            {unit && <span className="text-base font-normal text-muted-foreground">{unit}</span>}
+          </div>
         </div>
         <div className="text-right">
-          <div className="text-sm text-muted-foreground">Fair value estimate</div>
+          <div className="text-sm text-muted-foreground">{fairLabel}</div>
           <div className="num font-[family-name:var(--font-display)] text-3xl font-semibold text-muted-foreground">
             {money(fair)}
+            {unit && <span className="text-base font-normal">{unit}</span>}
           </div>
         </div>
       </div>
