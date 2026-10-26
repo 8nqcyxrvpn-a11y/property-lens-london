@@ -55,6 +55,15 @@ function Method() {
               </tbody>
             </table>
           </div>
+          {m.test.baseline_per_m2 && (
+            <p className="mt-3">
+              For homes with a known size, the model is about as accurate as a valuer&apos;s rule of thumb, the
+              neighbourhood&apos;s price per square metre times the size, and well ahead of the neighbourhood median.
+              What it adds is an explanation for every estimate and a value for homes whose size isn&apos;t on record.
+              Getting much closer would need what no public data shows: condition, floor level, outdoor space and
+              lease length.
+            </p>
+          )}
           <p className="mt-3 text-sm text-muted-foreground">
             Typical error is the median gap between the estimate and the real price. A home is called above or below
             fair value only when its price is further from the estimate than that typical error (±{p(m.fair_band)}), so
