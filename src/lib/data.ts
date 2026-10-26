@@ -368,7 +368,7 @@ export function parseListing(text: string): ParsedListing {
   }
   const addr = t.split("\n").map((l) => l.trim()).find((l) => /,\s*(london\s*)?[A-Z]{1,2}\d[A-Z\d]?\b/i.test(l) && l.length < 120);
   if (addr) {
-    out.address = addr;
+    out.address = addr.replace(/^.*?\b(for sale|to rent|to let|for rent)\s+(in|on|at)\s+/i, "");
     if (!out.postcode) out.found.push("address");
   }
 

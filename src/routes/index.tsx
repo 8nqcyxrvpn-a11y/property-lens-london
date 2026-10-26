@@ -10,6 +10,7 @@ import {
   safetyWords,
   SHORTCUTS,
   shortMoney,
+  UNIVERSITIES,
   TYPE_NAME,
   useAreas,
   useHomes,
@@ -97,7 +98,7 @@ function FindAHome() {
     setSearching(true);
     try {
       const hit = await findPlace(query);
-      if (!hit) setSearchError(`No London place matched "${query}". Try a street, station or postcode.`);
+      if (!hit) setSearchError(`No London place matched "${query}". Try a street, station, landmark or postcode.`);
       else {
         setPlace(hit);
         setSort("near");
@@ -151,6 +152,13 @@ function FindAHome() {
     [results],
   );
 
+  const nearest = useMemo(() => {
+    if (!place || !homes.data || results.length) return null;
+    let best = Infinity;
+    for (const h of homes.data) best = Math.min(best, distanceM(place.lat, place.lon, h.la, h.lo));
+    return Number.isFinite(best) ? best : null;
+  }, [place, homes.data, results.length]);
+
   const counts = useMemo(() => {
     const c: Record<Verdict, number> = { below: 0, fair: 0, above: 0 };
     for (const h of results) c[h.v] += 1;
@@ -169,8 +177,14 @@ function FindAHome() {
         <p className="mt-2 text-muted-foreground">
           Every home sold in Islington and Hammersmith &amp; Fulham since 2022
           {model.data ? ` (${model.data.sales.toLocaleString("en-GB")} sales)` : ""}, each with a tested fair-value
-          estimate, the reasons behind it, street safety, what&apos;s nearby and how long it takes to get to LSE, UCL
-          and King&apos;s.
+          estimate, the reasons behind it, street safety, what&apos;s nearby and how long it takes to get to six
+          London universities.
+        </p>
+        <p className="mt-2">
+          These are past sales, so they show what homes really go for.{" "}
+          <Link to="/check" className="font-medium underline">
+            Found a flat to rent or buy now? Check its price.
+          </Link>
         </p>
       </section>
 
@@ -206,17 +220,26 @@ function FindAHome() {
           </button>
         )}
       </form>
-      <div className="mt-2 flex flex-wrap gap-2 text-sm">
-        {SHORTCUTS.map((s) => (
-          <button
-            key={s.label}
-            type="button"
-            onClick={() => void search(undefined, s)}
-            className={`rounded-full border px-3 py-1 ${place?.label === s.label ? "border-foreground bg-foreground text-background" : "border-input bg-card hover:bg-muted"}`}
-          >
-            Near {s.label}
-          </button>
+      <div className="mt-3 space-y-2 text-sm">
+        {([["Universities", UNIVERSITIES], ["Places", SHORTCUTS]] as const).map(([group, list]) => (
+          <div key={group} className="flex flex-wrap items-center gap-2">
+            <span className="w-24 shrink-0 text-xs uppercase tracking-wide text-muted-foreground">{group}</span>
+            {list.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => void search(undefined, s)}
+                className={`rounded-full border px-3 py-1 ${place?.label === s.label ? "border-foreground bg-foreground text-background" : "border-input bg-card hover:bg-muted"}`}
+              >
+                Near {s.label}
+              </button>
+            ))}
+          </div>
         ))}
+        <p className="text-xs text-muted-foreground">
+          Or search for anything in London — a landmark, street, station or postcode. Homes are shown in Islington and
+          Hammersmith &amp; Fulham.
+        </p>
       </div>
       {searchError && <p className="mt-2 text-sm text-[var(--above)]">{searchError}</p>}
 
@@ -238,7 +261,8 @@ function FindAHome() {
           options={[["2022-01-01", "2022"], ["2024-01-01", "2024"], ["2025-01-01", "2025"], ["2026-01-01", "2026"]]} />
         {place && (
           <Select label="Within" value={String(filters.radiusKm)} onChange={(v) => set("radiusKm", Number(v))}
-            options={[["0.5", "500 m"], ["1", "1 km"], ["1.5", "1.5 km"], ["2.5", "2.5 km"], ["4", "4 km"]]} />
+            options={([["0.5", "500 m"], ["1", "1 km"], ["1.5", "1.5 km"], ["2.5", "2.5 km"], ["4", "4 km"]] as [string, string][]).concat(
+              filters.radiusKm > 4 ? [[String(filters.radiusKm), `${filters.radiusKm} km`]] : [])} />
         )}
         <Toggle label="Quiet streets only" checked={filters.quietOnly} onChange={(v) => set("quietOnly", v)} />
         <Toggle label="Safer areas only" checked={filters.saferOnly} onChange={(v) => set("saferOnly", v)} />
@@ -275,9 +299,25 @@ function FindAHome() {
               </label>
             </div>
             {results.length === 0 ? (
-              <p className="mt-10 text-muted-foreground">
-                No homes match. Widen the distance, raise the price limit or switch off a filter.
-              </p>
+              nearest !== null && nearest > filters.radiusKm * 1000 ? (
+                <div className="mt-8 max-w-xl space-y-3">
+                  <p>
+                    {place?.label} is outside the area Property Lens covers. The closest homes in the data are about{" "}
+                    {metres(nearest)} away, in Islington or Hammersmith &amp; Fulham.
+                  </p>
+                  <button type="button" onClick={() => set("radiusKm", Math.ceil((nearest + 1500) / 1000))}
+                    className="rounded-sm border border-foreground px-4 py-2 text-sm font-medium hover:bg-muted">
+                    Show homes within {Math.ceil((nearest + 1500) / 1000)} km
+                  </button>
+                  <p className="text-sm text-muted-foreground">
+                    For a rent anywhere in London, use <Link to="/check" className="underline">Check a listing</Link>.
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-10 text-muted-foreground">
+                  No homes match. Widen the distance, raise the price limit or switch off a filter.
+                </p>
+              )
             ) : (
               <ul className="mt-3 divide-y divide-border border-y border-border">
                 {results.slice(0, shown).map((h) => (
