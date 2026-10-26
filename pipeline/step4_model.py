@@ -67,6 +67,13 @@ def features(df: pd.DataFrame) -> tuple[list[str], list[str]]:
         df["epc_band"] = df["energy_band"].fillna("unknown")
         cats.append("epc_band")
         nums += ["log_area", "rooms_f", "has_epc"]
+        # Flats and houses are priced differently in each neighbourhood, and size matters
+        # differently for flats: these two interactions tie the model to the per-m2 yardstick.
+        df["is_flat"] = (df["property_type"] == "F").astype(int)
+        df["lsoa_flat"] = df["lsoa_code"] + "_" + df["is_flat"].astype(str)
+        df["log_area_flat"] = df["log_area"] * df["is_flat"]
+        cats.append("lsoa_flat")
+        nums.append("log_area_flat")
     return cats, nums
 
 
@@ -142,6 +149,7 @@ GROUP_LABELS = {
     "type_tenure": "Type and tenure", "new_build": "New build", "quarter": "When it sold",
     "borough_name": "Borough", "lsoa_code": "Neighbourhood", "log_station": "Distance to a station",
     "busy": "On a busy main road", "log_area": "Floor area", "rooms_f": "Number of rooms",
+    "lsoa_flat": "Neighbourhood", "log_area_flat": "Floor area",
     "epc_band": "Energy rating", "has_epc": "Energy certificate on record",
 }
 
@@ -204,8 +212,13 @@ def main() -> int:
 
     homes = []
     for i, row in df.iterrows():
-        parts = sorted(((GROUP_LABELS.get(g, g), float(contrib.at[i, g])) for g in contrib.columns
-                        if g not in ("quarter", "has_epc")), key=lambda kv: -abs(kv[1]))
+        merged: dict[str, float] = {}
+        for g in contrib.columns:
+            if g in ("quarter", "has_epc"):
+                continue
+            label = GROUP_LABELS.get(g, g)
+            merged[label] = merged.get(label, 0.0) + float(contrib.at[i, g])
+        parts = sorted(merged.items(), key=lambda kv: -abs(kv[1]))
         why = [[label, round(math.exp(v) - 1, 3)] for label, v in parts[:4] if abs(v) >= 0.02]
         addr = " ".join(x for x in [row["saon"], row["paon"], row["street"]] if isinstance(x, str) and x)
         rec = {
@@ -260,7 +273,8 @@ def main() -> int:
         "verdicts": df["verdict"].value_counts().to_dict(),
         "epc": "log_area" in nums,
         # Average contribution of each group, so the browser can explain a listing the same way.
-        "contrib_mean": {GROUP_LABELS.get(g, g): float(v) for g, v in contrib.attrs["mean"].items()},
+        "contrib_mean": (lambda means: {lab: sum(float(v) for g, v in means.items() if GROUP_LABELS.get(g, g) == lab)
+                                        for lab in {GROUP_LABELS.get(g, g) for g in means}})(contrib.attrs["mean"]),
         "fill": ({
             "log_area_by_type_tenure": {k: float(v) for k, v in df.groupby("type_tenure")["log_area"].median().items()},
             "rooms_median": float(df["rooms_f"].median()),
