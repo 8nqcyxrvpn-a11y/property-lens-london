@@ -87,6 +87,7 @@ export interface Model {
   places: Record<string, { name: string; lat: number; lon: number }>;
   verdicts: Record<string, number>;
   epc: boolean;
+  contrib_mean: Record<string, number>;
   fill: { log_area_by_type_tenure: Record<string, number>; rooms_median: number } | null;
 }
 
