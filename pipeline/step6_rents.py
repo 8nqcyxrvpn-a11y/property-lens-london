@@ -18,14 +18,14 @@ from config import PUBLIC, RENTS_FALLBACK_URL, RENTS_PAGE, USER_AGENT
 
 HEADERS = {"User-Agent": USER_AGENT}
 CATEGORIES = {  # output key -> words that identify the column header
-    "all": ["all categor", "all propert", "all dwelling"],
+    "flat": ["flat maisonette", "flat or maisonette", "flats and maisonettes"],
     "studio": ["studio"],
     "1": ["one bed", "1 bed"],
     "2": ["two bed", "2 bed"],
     "3": ["three bed", "3 bed"],
     "4": ["four or more bed", "four bed", "4 or more bed", "4+ bed", "4 bed"],
 }
-POSITIONAL = {"all": 7, "1": 11, "2": 15, "3": 19, "4": 23}  # 0-based columns in Table 1 (2026 layout)
+POSITIONAL = {"all": 7, "1": 11, "2": 15, "3": 19, "4": 23, "flat": 39}  # 0-based columns in Table 1 (2026 layout)
 
 
 def latest_url() -> str:
@@ -61,6 +61,9 @@ def pick_columns(header: list[str]) -> dict[str, int]:
                     and not any(x in h for x in ("change", "index", "%")):
                 out[key] = j
                 break
+    exact = [j for j, h in enumerate(low) if h in ("rental price", "average rental price")]
+    if exact:
+        out["all"] = exact[0]
     if len(out) < 4:  # headers didn't name the categories clearly; fall back to the known layout
         print("headers not recognised; using positional columns", flush=True)
         out = dict(POSITIONAL)
