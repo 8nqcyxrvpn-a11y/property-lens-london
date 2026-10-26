@@ -132,7 +132,10 @@ def contributions(model: Pipeline, X: pd.DataFrame, cats, nums) -> pd.DataFrame:
                     break
         groups.setdefault(base, []).append(i)
     contrib = pd.DataFrame({g: Z[:, idx] @ coef[idx] for g, idx in groups.items()}, index=X.index)
-    return contrib - contrib.mean()
+    contrib.attrs["mean"] = contrib.mean().to_dict()
+    centred = contrib - contrib.mean()
+    centred.attrs["mean"] = contrib.attrs["mean"]
+    return centred
 
 
 GROUP_LABELS = {
@@ -256,6 +259,8 @@ def main() -> int:
         "places": {k: {"name": v[0], "lat": v[1], "lon": v[2]} for k, v in PLACES.items()},
         "verdicts": df["verdict"].value_counts().to_dict(),
         "epc": "log_area" in nums,
+        # Average contribution of each group, so the browser can explain a listing the same way.
+        "contrib_mean": {GROUP_LABELS.get(g, g): float(v) for g, v in contrib.attrs["mean"].items()},
         "fill": ({
             "log_area_by_type_tenure": {k: float(v) for k, v in df.groupby("type_tenure")["log_area"].median().items()},
             "rooms_median": float(df["rooms_f"].median()),
